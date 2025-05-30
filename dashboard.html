@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>BP Tracker</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <!-- Bootstrap CSS -->
+  <link
+    href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css"
+    rel="stylesheet"
+  />
+</head>
+<body class="bg-light">
+  <div class="container mt-5">
+    <div class="row justify-content-center">
+      <div class="col-md-6">
+        <div class="card shadow-lg">
+          <div class="card-body">
+            <h2 class="text-center text-primary mb-4">Enter Your Blood Pressure</h2>
+            <form id="bpForm">
+              <div class="mb-3">
+                <label for="date" class="form-label">Date</label>
+                <input type="date" class="form-control" id="date" required />
+              </div>
+
+              <div class="mb-3">
+                <label for="systolic" class="form-label">Systolic (Top)</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="systolic"
+                  placeholder="e.g. 120"
+                  required
+                />
+              </div>
+
+              <div class="mb-3">
+                <label for="diastolic" class="form-label">Diastolic (Bottom)</label>
+                <input
+                  type="number"
+                  class="form-control"
+                  id="diastolic"
+                  placeholder="e.g. 80"
+                  required
+                />
+              </div>
+
+              <button type="submit" class="btn btn-success w-100">Save BP</button>
+            </form>
+
+            <p class="mt-3" id="message"></p>
+
+            <div class="text-center mt-3">
+              <a href="records.html" class="btn btn-outline-primary">📊 View Records</a>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Bootstrap JS (optional) -->
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+  <script>
+    // Set today's date automatically on page load
+    document.addEventListener("DOMContentLoaded", () => {
+      const dateInput = document.getElementById("date");
+      const today = new Date().toISOString().split("T")[0];
+      dateInput.value = today;
+    });
+
+    // Handle form submission
+    document.getElementById("bpForm").addEventListener("submit", (e) => {
+      e.preventDefault();
+
+      const date = document.getElementById("date").value;
+      const systolic = document.getElementById("systolic").value.trim();
+      const diastolic = document.getElementById("diastolic").value.trim();
+
+      // Determine time of day automatically
+      const hour = new Date().getHours();
+      let timeOfDay = "Morning";
+      if (hour >= 12 && hour < 17) timeOfDay = "Afternoon";
+      else if (hour >= 17) timeOfDay = "Evening";
+
+      // Validate inputs (basic)
+      if (!date || !systolic || !diastolic) {
+        document.getElementById("message").innerText = "⚠️ Please fill all fields.";
+        return;
+      }
+      if (systolic <= 0 || diastolic <= 0) {
+        document.getElementById("message").innerText = "⚠️ BP values must be positive numbers.";
+        return;
+      }
+
+      // Prepare form data
+      const formData = new FormData();
+      formData.append("date", date);
+      formData.append("timeOfDay", timeOfDay);
+      formData.append("systolic", systolic);
+      formData.append("diastolic", diastolic);
+
+      // Send data to save_bp.php via POST
+      fetch("save_bp.php", {
+        method: "POST",
+        body: formData
+      })
+      .then(response => response.text())
+      .then(data => {
+        if (data.trim() === "success") {
+          document.getElementById("message").innerText = "✅ BP saved to database!";
+          document.getElementById("bpForm").reset();
+          document.getElementById("date").value = new Date().toISOString().split("T")[0];
+        } else {
+          document.getElementById("message").innerText = "❌ Error saving data.";
+          console.error("Error:", data);
+        }
+      })
+      .catch(error => {
+        document.getElementById("message").innerText = "❌ Network error.";
+        console.error("Fetch error:", error);
+      });
+    });
+  </script>
+</body>
+</html>
